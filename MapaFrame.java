@@ -1,48 +1,62 @@
 import javax.swing.*;
+import java.awt.*;
 import java.sql.*;
 
 public class MapaFrame extends JFrame {
-    private String zonaSelecionada;
-    
-    public MapaFrame(String zonaSelecionada) {
-        this.zonaSelecionada = zonaSelecionada;
+    private static final String DB_URL = "jdbc:sqlite:banco_de_dados.db";
+    private String zonaAtual;
+
+    public MapaFrame(String zona) {
+        this.zonaAtual = zona;
         
-        setTitle("Mapa de Puebla - Zona: " + zonaSelecionada);
-        setSize(800, 600);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setTitle("Mapa de Puebla - " + zona);
+        setSize(600, 450);
         setLocationRelativeTo(null);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-        
-        JLabel zonaLabel = new JLabel("Você está visualizando: " + zonaSelecionada);
-        add(zonaLabel);
+        // Painel principal
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
+        // Label com a zona atual
+        JLabel lblZona = new JLabel("Zona actual: " + zona, SwingConstants.CENTER);
+        lblZona.setFont(new Font("Arial", Font.BOLD, 18));
+        panel.add(lblZona, BorderLayout.NORTH);
+
+        // Botões
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 15));
         
-        JButton gravarBotao = new JButton("Gravar Interação");
-        gravarBotao.addActionListener(e -> {
-            String data = "2025-04-16"; 
-            String descricao = "Interação no mapa de Puebla - Zona: " + zonaSelecionada;
-            String tipo = "Consulta";
-            String usuario = "Lucas"; 
-            inserirInteracao(data, descricao, tipo, usuario);
+        JButton btnRegistrar = new JButton("Registrar Visita");
+        btnRegistrar.addActionListener(e -> {
+            registrarAcao("visita_zona");
+            JOptionPane.showMessageDialog(this, "Visita registrada en: " + zona);
         });
-        add(gravarBotao);
 
-        setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
-        setVisible(true);
+        JButton btnVolver = new JButton("Volver al Menú");
+        btnVolver.addActionListener(e -> {
+            new SeleccionZonaFrame().setVisible(true);
+            dispose();
+        });
+
+        buttonPanel.add(btnRegistrar);
+        buttonPanel.add(btnVolver);
+        panel.add(buttonPanel, BorderLayout.SOUTH);
+
+        add(panel);
     }
-    
-    public static void inserirInteracao(String data, String descricao, String tipo, String usuario) {
-        try (Connection connection = DriverManager.getConnection("jdbc:sqlite:banco_de_dados.db")) {
-            String sql = "INSERT INTO interacoes (data, descricao, tipo, usuario) VALUES (?, ?, ?, ?)";
-            try (PreparedStatement statement = connection.prepareStatement(sql)) {
-                statement.setString(1, data);
-                statement.setString(2, descricao);
-                statement.setString(3, tipo);
-                statement.setString(4, usuario);
-                statement.executeUpdate();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
+
+    private void registrarAcao(String acao) {
+        String sql = "INSERT INTO mapap (zona, acao) VALUES (?, ?)";
+        
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setString(1, zonaAtual);
+            pstmt.setString(2, acao);
+            pstmt.executeUpdate();
+            
+        } catch (SQLException ex) {
+            ex.printStackTrace();
         }
     }
 }
